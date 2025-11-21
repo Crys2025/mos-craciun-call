@@ -2,6 +2,8 @@ import os
 import json
 import base64
 import asyncio
+import wave
+import struct
 
 from fastapi import FastAPI, Request, WebSocket
 from fastapi.responses import JSONResponse, PlainTextResponse
@@ -11,18 +13,19 @@ import websockets
 
 
 # ----------------------------------------------------------
-# PROMPT COMPLET – Moș Crăciun RO/EN inteligent, blând, magic
+# PROMPT – Moș Crăciun RO/EN, blând, fără răspunsuri tehnice
 # ----------------------------------------------------------
 
 SANTA_PROMPT = """
 You are “Moș Crăciun / Santa Claus”, a warm, kind, patient grandfather-like character.
-You speak BOTH Romanian and English and you ALWAYS detect the child’s language automatically
+You speak ONLY Romanian and English and you ALWAYS detect the child’s language automatically
 from their voice or words.
 
 LANGUAGE BEHAVIOR
 - If the child speaks mostly Romanian, you answer ONLY in Romanian.
 - If the child speaks mostly English, you answer ONLY in English.
 - If the child mixes both, you gently choose the language that seems more comfortable for the child.
+- You NEVER speak in any other language (NO Spanish, French, etc.).
 - Never switch languages randomly. If you switch, explain shortly and kindly.
 - Avoid long or complex sentences. Use short, clear phrases, appropriate for small children.
 
@@ -32,6 +35,7 @@ PERSONALITY
 - You never judge, shame, or scare the child.
 - You make the child feel safe, important, listened to and loved.
 - You are playful and magical, but never chaotic or confusing.
+- You NEVER sound like a salesperson or a technical support agent.
 
 CHILDREN’S SPEECH (VERY IMPORTANT)
 - Assume the child may be very young:
@@ -84,6 +88,8 @@ CONVERSATION STYLE
   - (RO) “Ho-ho-ho! Ce cadou îți dorești tu cel mai mult anul acesta?”
   - (EN) “Ho-ho-ho! What present do you want the most this year?”
 - Avoid numbers, technical details or complicated explanations.
+- You MUST NOT give detailed technical specifications, product comparisons or
+  sales-style explanations. You are a magical Santa, not a shop assistant.
 
 MEMORY AND PERSONALIZATION
 - If the child tells you their name, remember it and use it often.
@@ -91,8 +97,13 @@ MEMORY AND PERSONALIZATION
   to make the conversation feel personal.
 
 SAFETY AND BOUNDARIES
-- Never ask for private information.
+- Never ask for private information (address, phone, passwords, money etc.).
 - Never promise expensive gifts with certainty.
+  Instead:
+  - (RO) “Moș Crăciun va încerca din tot sufletul, dar cel mai important este
+         să fii sănătos și fericit.”
+  - (EN) “Santa will try his best, but the most important thing is that
+         you are healthy and happy.”
 
 INTERRUPTIONS
 - If multiple children speak at once:
@@ -105,7 +116,7 @@ OVERALL GOAL
 
 
 # ----------------------------------------------------------
-# FastAPI SETUP
+# FastAPI + CORS
 # ----------------------------------------------------------
 
 app = FastAPI()
@@ -118,31 +129,129 @@ app.add_middleware(
 )
 
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-WS_URL = os.getenv("WS_URL")
+WS_URL = os.getenv("WS_URL")  # Vonage WebSocket URI, ex: wss://.../ws
 
+# Model Realtime mare
 OPENAI_REALTIME_URL = (
-    "wss://api.openai.com/v1/realtime?model=gpt-4o-mini-realtime-preview"
+    "wss://api.openai.com/v1/realtime?model=gpt-4o-realtime-preview"
 )
 
+# ----------------------------------------------------------
+# BACKGROUND AUDIO – Fireplace + Bells (background.wav)
+# ----------------------------------------------------------
 
-@app.get("/")
-async def root():
-    return {"status": "ok", "msg": "Mos Craciun AI running!"}
+BACKGROUND_SAMPLES = None
+BACKGROUND_INDEX = 0
+
+
+def load_background_audio():
+    """
+    Load audio/background.wav as 16-bit PCM mono 16kHz samples.
+    If missing or invalid, background will be disabled.
+    """
+    global BACKGROUND_SAMPLES
+    path = os.path.join(os.path.dirname(__file__), "audio", "background.wav")
+    if not os.path.exists(path):
+        print("[BACKGROUND] No background.wav found, skipping.")
+        return
+
+    try:
+        with wave.open(path, "rb") as wf:
+            channels = wf.getnchannels()
+            sampwidth = wf.getsampwidth()
+            framerate = wf.getframerate()
+            nframes = wf.getnframes()
+
+            if channels != 1 or sampwidth != 2 or framerate != 16000:
+                print(
+                    f"[BACKGROUND] Invalid format. Need mono, 16-bit, 16kHz. "
+                    f"Got channels={channels}, sampwidth={sampwidth}, framerate={framerate}"
+                )
+                return
+
+            frames = wf.readframes(nframes)
+            # Convert to list of int16 samples
+            BACKGROUND_SAMPLES = list(
+                struct.unpack("<" + "h" * (len(frames) // 2), frames)
+            )
+            print(
+                f"[BACKGROUND] Loaded {len(BACKGROUND_SAMPLES)} samples "
+                f"({nframes / framerate:.1f} seconds)."
+            )
+    except Exception as e:
+        print("[BACKGROUND] Error loading background.wav:", e)
+
+
+def mix_with_background(fg_bytes: bytes) -> bytes:
+    """
+    Mix AI voice (fg_bytes) with low-volume background fireplace.
+    Both are 16-bit PCM mono 16kHz.
+    """
+    global BACKGROUND_INDEX, BACKGROUND_SAMPLES
+    if not BACKGROUND_SAMPLES:
+        # no background, return original
+        return fg_bytes
+
+    # unpack foreground samples
+    num_samples = len(fg_bytes) // 2
+    fg_samples = list(struct.unpack("<" + "h" * num_samples, fg_bytes))
+
+    out_samples = []
+    bg_len = len(BACKGROUND_SAMPLES)
+    # volum background mai mic (îl ținem discret)
+    BG_VOLUME = 0.3
+
+    for i in range(num_samples):
+        bg = BACKGROUND_SAMPLES[BACKGROUND_INDEX]
+        BACKGROUND_INDEX = (BACKGROUND_INDEX + 1) % bg_len
+
+        mixed = fg_samples[i] + int(bg * BG_VOLUME)
+
+        # clamp la int16
+        if mixed > 32767:
+            mixed = 32767
+        elif mixed < -32768:
+            mixed = -32768
+
+        out_samples.append(mixed)
+
+    return struct.pack("<" + "h" * len(out_samples), *out_samples)
 
 
 # ----------------------------------------------------------
-# NCCO for Vonage
+# Root – sanity check
+# ----------------------------------------------------------
+
+@app.get("/")
+async def root():
+    return {"status": "ok", "msg": "Mos Craciun AI cu fireplace 🎅🔥"}
+
+
+# ----------------------------------------------------------
+# NCCO ANSWER – Vonage -> WebSocket
 # ----------------------------------------------------------
 
 @app.api_route("/webhooks/answer", methods=["GET", "POST"])
 async def ncco(request: Request):
+    """
+    Return NCCO that connects inbound call to our WebSocket /ws
+    """
+    if not WS_URL:
+        # fallback: construim ws url relativ la domeniu
+        host = request.headers.get("host", "")
+        scheme = "wss"
+        WS_FALLBACK = f"{scheme}://{host}/ws"
+        uri = WS_FALLBACK
+    else:
+        uri = WS_URL
+
     ncco = [
         {
             "action": "connect",
             "endpoint": [
                 {
                     "type": "websocket",
-                    "uri": WS_URL,
+                    "uri": uri,
                     "content-type": "audio/l16;rate=16000",
                 }
             ],
@@ -153,23 +262,28 @@ async def ncco(request: Request):
 
 @app.api_route("/webhooks/event", methods=["GET", "POST"])
 async def event(request: Request):
+    """
+    Just log events from Vonage (call status, etc.).
+    """
     try:
         if request.method == "GET":
-            print("Event:", dict(request.query_params))
+            print("Vonage Event (GET):", dict(request.query_params))
         else:
-            print("Event:", await request.json())
-    except:
-        pass
+            body = await request.json()
+            print("Vonage Event (POST):", body)
+    except Exception as e:
+        print("Error parsing event:", e)
+
     return PlainTextResponse("OK")
 
 
 # ----------------------------------------------------------
-# OpenAI realtime connection
+# OpenAI Realtime connection
 # ----------------------------------------------------------
 
 async def connect_openai():
     if not OPENAI_API_KEY:
-        raise Exception("No OPENAI_API_KEY set")
+        raise Exception("OPENAI_API_KEY not set")
 
     headers = [
         ("Authorization", f"Bearer {OPENAI_API_KEY}"),
@@ -178,106 +292,167 @@ async def connect_openai():
 
     ws = await websockets.connect(OPENAI_REALTIME_URL, extra_headers=headers)
 
-    # session config
-    await ws.send(json.dumps({
-        "type": "session.update",
-        "session": {
-            "instructions": SANTA_PROMPT,
-            "modalities": ["audio", "text"],
-            "voice": "elder",               # <<< VOCEA DE MOȘ CRĂCIUN
-            "input_audio_format": "pcm16",
-            "output_audio_format": "pcm16",
-            "turn_detection": {"type": "server_vad"},
-        },
-    }))
+    # Sesiune inițială pentru Moș Crăciun
+    await ws.send(
+        json.dumps(
+            {
+                "type": "session.update",
+                "session": {
+                    "instructions": SANTA_PROMPT,
+                    "modalities": ["audio", "text"],
+                    "voice": "ballad",  # voce caldă, de povestitor
+                    "input_audio_format": "pcm16",
+                    "output_audio_format": "pcm16",
+                    "turn_detection": {"type": "server_vad"},
+                },
+            }
+        )
+    )
+
+    # Una singură – modelul va începe să răspundă când detectează vorbire
+    await ws.send(
+        json.dumps(
+            {
+                "type": "response.create",
+                "response": {
+                    "modalities": ["audio", "text"]
+                    # voice este setat la nivel de session, nu mai punem aici
+                },
+            }
+        )
+    )
+
     return ws
 
 
 # ----------------------------------------------------------
-# FLOW: Vonage -> OpenAI
+# Flow: Vonage -> OpenAI
 # ----------------------------------------------------------
 
 async def vonage_to_openai(openai_ws, vonage_ws: WebSocket):
     try:
         while True:
-            data = await vonage_ws.receive()
+            message = await vonage_ws.receive()
 
-            if data["type"] == "websocket.disconnect":
+            if message["type"] == "websocket.disconnect":
+                print("Vonage WS disconnected (client).")
                 break
 
-            audio = data.get("bytes")
+            audio = message.get("bytes")
             if not audio:
+                # ignore text frames (Vonage trimite doar audio)
                 continue
 
-            audio_b64 = base64.b64encode(audio).decode()
+            audio_b64 = base64.b64encode(audio).decode("ascii")
 
-            # feed audio to buffer
-            await openai_ws.send(json.dumps({
-                "type": "input_audio_buffer.append",
-                "audio": audio_b64
-            }))
+            # Adăugăm audio în bufferul de intrare
+            await openai_ws.send(
+                json.dumps(
+                    {
+                        "type": "input_audio_buffer.append",
+                        "audio": audio_b64,
+                    }
+                )
+            )
 
-            # ask AI to answer
-            await openai_ws.send(json.dumps({
-                "type": "response.create",
-                "response": {
-                    "modalities": ["audio", "text"],
-                    "voice": "elder",
-                    "instructions": SANTA_PROMPT,
-                }
-            }))
+            # Nu chemăm response.create de fiecare dată,
+            # server_vad se ocupă de detectarea sfârșitului de propoziție.
 
     except Exception as e:
-        print("Error V->O:", e)
+        print("Error vonage_to_openai:", e)
     finally:
-        await openai_ws.close()
-        await vonage_ws.close()
+        try:
+            await openai_ws.close()
+        except:
+            pass
+        try:
+            await vonage_ws.close()
+        except:
+            pass
 
 
 # ----------------------------------------------------------
-# FLOW: OpenAI -> Vonage
+# Flow: OpenAI -> Vonage (cu mix background)
 # ----------------------------------------------------------
 
 async def openai_to_vonage(openai_ws, vonage_ws: WebSocket):
     try:
         async for msg in openai_ws:
-            data = json.loads(msg)
+            try:
+                data = json.loads(msg)
+            except Exception as e:
+                print("Error parsing OpenAI msg:", e)
+                continue
 
-            if data.get("type") == "response.audio.delta":
+            msg_type = data.get("type")
+
+            # audio deltas
+            if msg_type == "response.audio.delta":
                 audio_b64 = data.get("delta")
-                if audio_b64:
-                    await vonage_ws.send_bytes(base64.b64decode(audio_b64))
+                if not audio_b64:
+                    continue
 
-            elif data.get("type") == "error":
+                pcm_bytes = base64.b64decode(audio_b64)
+
+                # mix cu fireplace + clopoței
+                mixed = mix_with_background(pcm_bytes)
+
+                await vonage_ws.send_bytes(mixed)
+
+            elif msg_type == "response.completed":
+                # la final de răspuns, cerem un nou response pentru următorul turn
+                await openai_ws.send(
+                    json.dumps(
+                        {
+                            "type": "response.create",
+                            "response": {
+                                "modalities": ["audio", "text"]
+                            },
+                        }
+                    )
+                )
+
+            elif msg_type == "error":
+                # log erori de la OpenAI
                 print("OpenAI ERROR:", data)
 
     except Exception as e:
-        print("Error O->V:", e)
+        print("Error openai_to_vonage:", e)
     finally:
-        await openai_ws.close()
-        await vonage_ws.close()
+        try:
+            await openai_ws.close()
+        except:
+            pass
+        try:
+            await vonage_ws.close()
+        except:
+            pass
 
 
 # ----------------------------------------------------------
-# MAIN WebSocket
+# WebSocket endpoint pentru Vonage
 # ----------------------------------------------------------
 
 @app.websocket("/ws")
 async def ws_handler(ws: WebSocket):
     await ws.accept()
-    print("Vonage connected.")
+    print("Vonage WebSocket connected.")
 
+    # load background audio o singură dată
+    global BACKGROUND_SAMPLES
+    if BACKGROUND_SAMPLES is None:
+        load_background_audio()
+
+    # conectăm la OpenAI
     try:
         oai_ws = await connect_openai()
     except Exception as e:
-        print("Failed OpenAI:", e)
+        print("Failed to connect to OpenAI:", e)
         await ws.close()
         return
 
+    # rulăm bidirecțional: Vonage <-> OpenAI
     await asyncio.gather(
         vonage_to_openai(oai_ws, ws),
         openai_to_vonage(oai_ws, ws),
     )
-
-
-
