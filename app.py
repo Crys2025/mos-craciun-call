@@ -199,7 +199,7 @@ def mix_with_background(fg_bytes: bytes) -> bytes:
     out_samples = []
     bg_len = len(BACKGROUND_SAMPLES)
     # volum background mai mic (îl ținem discret)
-    BG_VOLUME = 0.3
+    BG_VOLUME = 0.08
 
     for i in range(num_samples):
         bg = BACKGROUND_SAMPLES[BACKGROUND_INDEX]
@@ -300,7 +300,7 @@ async def connect_openai():
                 "session": {
                     "instructions": SANTA_PROMPT,
                     "modalities": ["audio", "text"],
-                    "voice": "ballad",  # voce caldă, de povestitor
+                    "voice": "sage",   # voce caldă, clară, potrivită pentru Moș Crăciun
                     "input_audio_format": "pcm16",
                     "output_audio_format": "pcm16",
                     "turn_detection": {"type": "server_vad"},
