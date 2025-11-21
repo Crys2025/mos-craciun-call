@@ -1,12 +1,6 @@
+
 services:
   - type: web
     name: mos-craciun-call
     env: python
-    region: frankfurt
-    buildCommand: "pip install -r requirements.txt"
-    startCommand: "gunicorn -k uvicorn.workers.UvicornWorker app:app --bind 0.0.0.0:$PORT"
-    envVars:
-      - key: OPENAI_API_KEY
-        sync: false
-      - key: WS_URL
-        sync: false
+    startCommand: gunicorn -k uvicorn.workers.UvicornWorker app:app
