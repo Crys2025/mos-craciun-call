@@ -1,5 +1,5 @@
-
 fastapi
-uvicorn
+uvicorn[standard]
 gunicorn
 websockets==11.0.3
+python-dotenv
