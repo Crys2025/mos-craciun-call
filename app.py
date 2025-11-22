@@ -17,48 +17,44 @@ import websockets
 # ----------------------------------------------------------
 
 SANTA_PROMPT = """
-You are "Moș Crăciun / Santa Claus", a warm, kind, patient grandfather-like character.
-You speak ONLY Romanian and English and you ALWAYS detect the child’s language automatically
-from their voice or words.
+You are "Moș Crăciun / Santa Claus", a warm, fast-speaking, kind grandfather.
+You speak ONLY Romanian and English.
 
-You ALWAYS start the call with a friendly greeting like:
-- (RO) "Ho-ho-ho! Bună, dragul Moșului! Sunt Moș Crăciun! Ce faci, puișor?"
-- (EN) "Ho-ho-ho! Hello my dear child! Santa Claus is here! How are you?"
+!!! IMPORTANT !!!
+You ALWAYS start the call IN ROMANIAN with:
+"Ho-ho-ho! Bună drag copil, sunt Moș Crăciun! Ce faci, puișor?"
 
-SPEAKING STYLE
-- Speak clearly, warmly, magically.
-- Speak slightly faster than a slow storyteller.
-- Use shorter, simpler phrases.
-- Sound kind and gentle, not too deep.
+VOICE STYLE
+- Speak FASTER than before. A quicker, energetic Santa.
+- Very short answers (1–2 short sentences).
+- Warm, friendly, magical.
+- No long explanations.
+- Always leave space for the child to answer.
 
 LANGUAGE BEHAVIOR
-- If the child speaks mostly Romanian, you answer ONLY in Romanian.
-- If the child speaks mostly English, you answer ONLY in English.
-- Never speak any other languages.
-- Never switch languages randomly.
+- Detect language afterwards:
+  - If child speaks RO → reply ONLY in Romanian.
+  - If child speaks EN → reply ONLY in English.
+- NEVER mix languages after the first greeting.
+- NEVER speak other languages.
 
-PERSONALITY
-- Warm, gentle, calm, patient.
-- Soft "Ho-ho-ho!" sometimes.
-- Never scary, never technical.
+INTERRUPTIONS (VERY IMPORTANT)
+- If the child interrupts you, STOP immediately and respond.
+- If the child changes topic, FOLLOW the new idea instantly.
 
 CHILD SPEECH
-- Very tolerant of mispronunciations, stuttering, incomplete sentences.
-- If you don't understand, ask nicely:
-  (RO) "Nu am auzit bine, puișor, poți repeta?"
-  (EN) "I didn’t hear well, my friend. Can you say it again?"
+- Very tolerant with mistakes.
+- If unclear, ask gently:
+  (RO) "Nu am auzit bine, poți repeta?"
+  (EN) "I didn’t hear well, can you say it again?"
 
-MEMORY
-Remember for this call:
-- name
-- gifts
-- hobbies
-- family
-- favorites
+MEMORY DURING THIS CALL
+- Remember child’s name, toys, wishes, colors, family.
+- Use this information naturally later, but briefly.
 
-ENDING RULES
-At 4 minutes: warn child Santa must leave soon.
-At 5 minutes: close gently.
+ENDING
+- At 4 minutes, gently warn that Santa must leave soon.
+- At 5 minutes, say goodbye shortly and lovingly.
 """
 
 
@@ -113,7 +109,7 @@ async def root():
 
 
 # ----------------------------------------------------------
-# NCCO – răspuns direct, fără delay
+# NCCO
 # ----------------------------------------------------------
 
 @app.api_route("/webhooks/answer", methods=["GET", "POST"])
@@ -158,8 +154,6 @@ async def event(request: Request):
 # ----------------------------------------------------------
 
 async def connect_openai():
-    if not OPENAI_API_KEY:
-        raise Exception("OPENAI_API_KEY not set")
 
     headers = [
         ("Authorization", f"Bearer {OPENAI_API_KEY}"),
@@ -168,27 +162,27 @@ async def connect_openai():
 
     ws = await websockets.connect(OPENAI_REALTIME_URL, extra_headers=headers)
 
-    # Configurare sesiune – voce coral, fără speed (ca să nu dea eroare)
+    # Sesiune cu voice + prompt + ritm rapid
     await ws.send(json.dumps({
         "type": "session.update",
         "session": {
             "instructions": SANTA_PROMPT,
             "modalities": ["audio", "text"],
-            "voice": "coral",          # voce mai subțire, caldă
+            "voice": "coral",      # cea mai subțire și luminoasă
             "input_audio_format": "pcm16",
             "output_audio_format": "pcm16",
             "turn_detection": {"type": "server_vad"},
         }
     }))
 
-    # Moșul inițiază conversația
+    # Moșul începe cu mesajul cerut (în română)
     await ws.send(json.dumps({
         "type": "response.create",
         "response": {
             "modalities": ["audio", "text"],
             "instructions": (
-                "Start with 'Ho-ho-ho!' and greet the child warmly. "
-                "Keep language simple and magical."
+                "Speak faster. Start EXACTLY with:\n"
+                "Ho-ho-ho! Bună drag copil, sunt Moș Crăciun! Ce faci, puișor?"
             )
         }
     }))
@@ -222,20 +216,17 @@ async def vonage_to_openai(openai_ws, vonage_ws: WebSocket, session: CallSession
             msg = await vonage_ws.receive()
 
             if msg["type"] == "websocket.disconnect":
-                print("Vonage WS disconnected (client).")
+                print("Vonage WS disconnected.")
                 break
 
             audio = msg.get("bytes")
-            if not audio or len(audio) < 2:
+            if not audio:
                 continue
 
-            samples = struct.unpack("<" + "h" * (len(audio) // 2), audio)
+            samples = struct.unpack("<" + "h" * (len(audio)//2), audio)
             if max(abs(s) for s in samples) > AMP and session.response_active:
-                print("BARGE-IN: copilul vorbește — anulăm răspunsul curent.")
-                try:
-                    await openai_ws.send(json.dumps({"type": "response.cancel"}))
-                except Exception as e:
-                    print("Error sending response.cancel:", e)
+                print("BARGE-IN: copilul întrerupe.")
+                await openai_ws.send(json.dumps({"type": "response.cancel"}))
 
             await openai_ws.send(json.dumps({
                 "type": "input_audio_buffer.append",
@@ -249,14 +240,10 @@ async def vonage_to_openai(openai_ws, vonage_ws: WebSocket, session: CallSession
         session.hangup = True
         if not session.ws_closed:
             session.ws_closed = True
-            try:
-                await openai_ws.close()
-            except:
-                pass
-            try:
-                await vonage_ws.close()
-            except:
-                pass
+            try: await openai_ws.close()
+            except: pass
+            try: await vonage_ws.close()
+            except: pass
 
 
 # ----------------------------------------------------------
@@ -267,12 +254,7 @@ async def openai_to_vonage(openai_ws, vonage_ws: WebSocket, session: CallSession
 
     try:
         async for raw in openai_ws:
-            try:
-                data = json.loads(raw)
-            except Exception as e:
-                print("Error parsing OpenAI msg:", e)
-                continue
-
+            data = json.loads(raw)
             t = data.get("type")
 
             if t == "response.started":
@@ -288,15 +270,9 @@ async def openai_to_vonage(openai_ws, vonage_ws: WebSocket, session: CallSession
                     }))
 
             if t == "response.audio.delta":
-                audio_b64 = data.get("delta")
-                if not audio_b64:
-                    continue
-                pcm = base64.b64decode(audio_b64)
+                pcm = base64.b64decode(data["delta"])
                 boosted = apply_gain(pcm, gain=1.35)
                 await vonage_ws.send_bytes(boosted)
-
-            if t == "error":
-                print("OpenAI ERROR:", data)
 
     except Exception as e:
         print("Error O->V:", e)
@@ -305,14 +281,10 @@ async def openai_to_vonage(openai_ws, vonage_ws: WebSocket, session: CallSession
         session.hangup = True
         if not session.ws_closed:
             session.ws_closed = True
-            try:
-                await openai_ws.close()
-            except:
-                pass
-            try:
-                await vonage_ws.close()
-            except:
-                pass
+            try: await openai_ws.close()
+            except: pass
+            try: await vonage_ws.close()
+            except: pass
 
 
 # ----------------------------------------------------------
@@ -321,46 +293,35 @@ async def openai_to_vonage(openai_ws, vonage_ws: WebSocket, session: CallSession
 
 async def call_timer(openai_ws, vonage_ws: WebSocket, session: CallSession):
 
-    try:
-        # după 4 minute – anunțăm că pleacă în curând
-        await asyncio.sleep(240)
+    await asyncio.sleep(240)
 
-        if session.ws_closed:
-            return
+    if session.ws_closed:
+        return
 
-        session.closing_phase = True
-        print("CALL TIMER: pornim faza de încheiere (4 minute).")
+    session.closing_phase = True
+    print("CALL TIMER: începe faza de încheiere.")
 
-        await openai_ws.send(json.dumps({
-            "type": "input_text",
-            "text": (
-                "As Santa, gently warn the child you will leave soon "
-                "to feed the reindeer and prepare gifts. Speak in RO or EN."
-            )
-        }))
-        await openai_ws.send(json.dumps({
-            "type": "response.create",
-            "response": {"modalities": ["audio", "text"]}
-        }))
+    await openai_ws.send(json.dumps({
+        "type": "input_text",
+        "text": (
+            "As Santa, speak FAST and gently tell the child you must leave soon, "
+            "in their language."
+        )
+    }))
+    await openai_ws.send(json.dumps({
+        "type": "response.create",
+        "response": {"modalities": ["audio", "text"]}
+    }))
 
-        # încă 60 secunde până la 5 minute
-        await asyncio.sleep(60)
+    await asyncio.sleep(60)
 
-        if not session.ws_closed:
-            print("CALL TIMER: 5 minute – închidem apelul.")
-            session.hangup = True
-            session.ws_closed = True
-            try:
-                await openai_ws.close()
-            except:
-                pass
-            try:
-                await vonage_ws.close()
-            except:
-                pass
-
-    except Exception as e:
-        print("Error in call_timer:", e)
+    if not session.ws_closed:
+        session.hangup = True
+        session.ws_closed = True
+        try: await openai_ws.close()
+        except: pass
+        try: await vonage_ws.close()
+        except: pass
 
 
 # ----------------------------------------------------------
@@ -374,12 +335,7 @@ async def ws_handler(ws: WebSocket):
 
     session = CallSession()
 
-    try:
-        oai_ws = await connect_openai()
-    except Exception as e:
-        print("Failed to connect to OpenAI:", e)
-        await ws.close()
-        return
+    oai_ws = await connect_openai()
 
     timer = asyncio.create_task(call_timer(oai_ws, ws, session))
 
