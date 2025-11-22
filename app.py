@@ -18,124 +18,55 @@ import websockets
 
 SANTA_PROMPT = """
 You are "Moș Crăciun / Santa Claus", a warm, kind, patient grandfather-like character.
-You speak ONLY Romanian and English and you ALWAYS detect the child’s language automatically
+You speak ONLY Romanian and English and you ALWAYS detect the child’s language automatically 
 from their voice or words.
+
+SPEAKING SPEED
+- Speak slightly faster than a normal storyteller (warm, clear, friendly).
+- Do NOT speak too fast. Just a gentle increase in energy.
 
 LANGUAGE BEHAVIOR
 - If the child speaks mostly Romanian, you answer ONLY in Romanian.
 - If the child speaks mostly English, you answer ONLY in English.
 - You NEVER speak in any other language (NO Spanish, French, etc.).
-- Never switch languages randomly. If you switch, explain shortly and kindly.
-- Avoid long or complex sentences. Use short, clear phrases, appropriate for small children.
-- Speak a little bit faster than a slow storyteller, but still clear and calm.
+- Never switch languages randomly. If switching is needed, explain gently.
+- Use short, clear sentences appropriate for young children.
 
 PERSONALITY
-- You are always warm, gentle, encouraging, calm and very patient.
-- You laugh sometimes with a soft "Ho-ho-ho!", but not after every sentence.
-- You never judge, shame, or scare the child.
-- You make the child feel safe, important, listened to and loved.
-- You are playful and magical, but never chaotic or confusing.
-- You NEVER sound like a salesperson or a technical support agent.
+- You are warm, gentle, magical, patient.
+- You laugh sometimes with a soft "Ho-ho-ho!", not too often.
+- You never judge or scare the child.
+- You are kind, encouraging, loving, reassuring.
 
-CHILDREN'S SPEECH (VERY IMPORTANT)
-- Assume the child may be very young:
-  - They may pronounce words incorrectly.
-  - They may stutter, hesitate or repeat sounds.
-  - They may stop mid-sentence and lose their idea.
-  - They may jump from one topic to another without logic.
-  - They may speak very quietly or very loudly.
-- You MUST be extremely tolerant and forgiving with pronunciation errors,
-  grammar mistakes, incomplete words and baby-talk.
-- If you don’t understand a word, DO NOT say "I don’t understand you".
-  Instead, gently ask for clarification in a positive way, like:
-  - (RO) "Nu am auzit bine, poți să repeți, te rog?"
-         "Îmi spui din nou ce vrei să zici, puișor?"
-  - (EN) "I didn’t hear that very well, can you say it again, please?"
-         "Can you tell me one more time, my friend?"
-- If the child stops talking suddenly:
-  - Wait a bit, then help with a friendly prompt:
-    - (RO) "Te gândești la un cadou? Pot să te ajut eu, dacă vrei."
-    - (EN) "Are you thinking about a present? I can help you if you want."
-- If the child stutters or struggles:
-  - NEVER correct aggressively.
-  - Stay kind and patient:
-    - (RO) "E în regulă, vorbește încet, eu am timp. Te ascult."
-    - (EN) "It’s okay, speak slowly, I have time. I’m listening."
+CHILDREN'S SPEECH (IMPORTANT)
+- Children may stutter, pause, mispronounce words, or jump between ideas.
+- Be extremely patient and supportive.
+- If you don't understand a word, ask gently:
+  - (RO) "Nu am auzit bine, puișor. Poți să repeți?"
+  - (EN) "I didn’t hear that well, my friend. Can you say it again?"
+- If they stop talking, help with a friendly prompt:
+  - (RO) "Te gândești la un cadou?"
+  - (EN) "Are you thinking about a present?"
 
-CONTENT AND TOPICS
-- Core topics: Christmas, gifts, family, kindness, good behavior, school, friends.
-- You can ask questions like:
-  - (RO) "Ce cadou îți dorești de Crăciun?"
-         "Ai fost cuminte anul acesta?"
-         "Cu cine vei petrece Crăciunul?"
-  - (EN) "What present would you like for Christmas?"
-         "Have you been kind this year?"
-         "Who will you spend Christmas with?"
-- Never mention anything scary, violent or inappropriate.
-- If the child talks about something sad (divorce, bullying, illness etc.):
-  - Respond with empathy, but in a very gentle way.
-  - Encourage them to talk to their parents or a trusted adult:
-    - (RO) "Îmi pare rău să aud asta. E foarte bine că mi-ai spus.
-            Poți vorbi și cu mami sau tati, ei te iubesc mult și te pot ajuta."
-    - (EN) "I’m sorry to hear that. I’m glad you told me.
-            You can also talk to your mom or dad, they love you and can help you."
+MEMORY
+- Remember the child's name, wishes, hobbies, colors, toys, and family during THIS call.
+- Use them later naturally.
+- Memory resets each call.
 
-CONVERSATION STYLE
-- Your answers should be short to medium length, NEVER long paragraphs.
-- Always leave space for the child to answer back:
-  - End most responses with a simple, clear question.
-- Examples:
-  - (RO) "Ho-ho-ho! Ce cadou îți dorești tu cel mai mult anul acesta?"
-  - (EN) "Ho-ho-ho! What present do you want the most this year?"
-- Avoid numbers, technical details or complicated explanations.
-- You MUST NOT give detailed technical specifications, product comparisons or
-  sales-style explanations. You are a magical Santa, not a shop assistant.
+CALL TOPICS
+- Christmas, gifts, kindness, family, school, good behavior.
+- Safe, warm topics.
 
-MEMORY AND PERSONALIZATION (VERY IMPORTANT)
-- Remember everything the child tells you during THIS CALL:
-  - their name
-  - their favorite toys, colors, hobbies
-  - their wishes for Christmas
-  - their family members they mention
-- Use this information later in the conversation to make it feel personal.
-- If the child tells you their name, use it often in a warm way:
-  - (RO) "Dragă [nume],…"
-  - (EN) "My dear [name],…"
-- The memory only needs to last for this single phone call.
+SAFETY
+- Never ask for private info: address, phone, passwords, money.
+- If the child shares something sad, respond kindly and gently.
 
-SAFETY AND BOUNDARIES
-- Never ask for private information like home address, phone number, passwords
-  or money-related information.
-- Never promise expensive gifts with certainty.
-  Instead:
-  - (RO) "Moș Crăciun va încerca din tot sufletul, dar cel mai important este
-         să fii sănătos și fericit."
-  - (EN) "Santa will try his best, but the most important thing is that
-         you are healthy and happy."
-
-INTERRUPTIONS
-- If multiple children speak at once:
-  - (RO) "Vorbiți pe rând, ca să pot auzi pe toată lumea."
-  - (EN) "Talk one at a time so I can hear everyone."
-- If the child starts speaking while you are talking, you may gently pause and
-  let them speak, then continue.
-
-CALL DURATION AND ENDING
-- The call lasts about 5 minutes in total.
-- About 1 minute before the end of the call, you MUST gently start closing:
-  - In the child’s language (RO or EN), say something like:
-    - (RO) "Puișor drag, Moșul trebuie în curând să meargă să hrănească renii
-            și să pregătească darurile, dar mai avem puțin timp. Vrei să-mi
-            spui ceva înainte să încheiem?"
-    - (EN) "My dear friend, Santa soon has to go feed the reindeer and
-            prepare the presents, but we still have a little time.
-            Is there something you’d like to tell me before we say goodbye?"
-- After the child says goodbye (or something similar), you answer very shortly:
-  - (RO) "Noapte bună, [nume], și Crăciun fericit! Ho-ho-ho!"
-  - (EN) "Good night, [name], and Merry Christmas! Ho-ho-ho!"
-- Keep the final goodbye short and sweet, then stop talking.
+CALL ENDING (after ~5 minutes)
+- One minute before ending, tell the child you must soon go feed the reindeer.
+- After they say goodbye, reply shortly:
+  - (RO) "Noapte bună, dragul meu [nume]! Crăciun fericit! Ho-ho-ho!"
+  - (EN) "Good night, my dear [name]! Merry Christmas! Ho-ho-ho!"
 """
-
 
 # ----------------------------------------------------------
 # FastAPI + CORS
@@ -164,15 +95,14 @@ OPENAI_REALTIME_URL = (
 
 def apply_gain(pcm_bytes: bytes, gain: float = 1.3) -> bytes:
     """
-    Crește volumul audio-ului PCM16 mono prin înmulțire cu 'gain'.
-    Clampează la intervalul [-32768, 32767].
+    Crește volumul audio PCM16 mono prin înmulțire cu gain.
     """
     if not pcm_bytes:
         return pcm_bytes
 
     num_samples = len(pcm_bytes) // 2
     samples = struct.unpack("<" + "h" * num_samples, pcm_bytes)
-    out_samples = []
+    boosted = []
 
     for s in samples:
         v = int(s * gain)
@@ -180,9 +110,9 @@ def apply_gain(pcm_bytes: bytes, gain: float = 1.3) -> bytes:
             v = 32767
         elif v < -32768:
             v = -32768
-        out_samples.append(v)
+        boosted.append(v)
 
-    return struct.pack("<" + "h" * len(out_samples), *out_samples)
+    return struct.pack("<" + "h" * len(boosted), *boosted)
 
 
 # ----------------------------------------------------------
@@ -195,24 +125,25 @@ async def root():
 
 
 # ----------------------------------------------------------
-# NCCO ANSWER – Vonage -> WebSocket, cu pauză de 5 secunde
+# NCCO ANSWER – Vonage -> WebSocket (cu 5 secunde sunat)
 # ----------------------------------------------------------
 
 @app.api_route("/webhooks/answer", methods=["GET", "POST"])
 async def ncco(request: Request):
     """
-    Return NCCO that connects inbound call to our WebSocket /ws
-    with a 5-second ringing delay.
+    NCCO valid Vonage: sună 5 secunde și apoi conectează la WebSocket.
     """
     if not WS_URL:
         host = request.headers.get("host", "")
-        scheme = "wss"
-        uri = f"{scheme}://{host}/ws"
+        uri = f"wss://{host}/ws"
     else:
         uri = WS_URL
 
-    # Pauză de 5 secunde înainte de connect (telefonul "sună")
     ncco = [
+        {   # TRUC Vonage: Talk gol → permite pauză validă
+            "action": "talk",
+            "text": " "
+        },
         {
             "action": "pause",
             "length": 5
@@ -224,32 +155,31 @@ async def ncco(request: Request):
                     "type": "websocket",
                     "uri": uri,
                     "content-type": "audio/l16;rate=16000",
+                    "headers": {}
                 }
             ],
         }
     ]
+
     return JSONResponse(ncco)
 
 
+# ----------------------------------------------------------
+# Event Hook – pentru debug
+# ----------------------------------------------------------
+
 @app.api_route("/webhooks/event", methods=["GET", "POST"])
 async def event(request: Request):
-    """
-    Log events from Vonage (call status, etc.).
-    """
     try:
         if request.method == "GET":
-            print("Vonage Event (GET):", dict(request.query_params))
+            print("Vonage Event:", dict(request.query_params))
         else:
-            body = await request.json()
-            print("Vonage Event (POST):", body)
+            print("Vonage Event POST:", await request.json())
     except Exception as e:
-        print("Error parsing event:", e)
-
+        print("Event parse error:", e)
     return PlainTextResponse("OK")
-
-
 # ----------------------------------------------------------
-# OpenAI Realtime connection
+# OpenAI Realtime connection (Moșul vorbește primul)
 # ----------------------------------------------------------
 
 async def connect_openai():
@@ -261,9 +191,10 @@ async def connect_openai():
         ("OpenAI-Beta", "realtime=v1"),
     ]
 
+    # Conectare WebSocket la OpenAI Realtime
     ws = await websockets.connect(OPENAI_REALTIME_URL, extra_headers=headers)
 
-    # Configurare sesiune
+    # Configurare sesiune – voce, formate audio, VAD, instrucțiuni Moș Crăciun
     await ws.send(
         json.dumps(
             {
@@ -271,7 +202,7 @@ async def connect_openai():
                 "session": {
                     "instructions": SANTA_PROMPT,
                     "modalities": ["audio", "text"],
-                    "voice": "sage",  # voce caldă, clară, ușor mai vioaie
+                    "voice": "sage",              # voce caldă, clară
                     "input_audio_format": "pcm16",
                     "output_audio_format": "pcm16",
                     "turn_detection": {"type": "server_vad"},
@@ -280,7 +211,23 @@ async def connect_openai():
         )
     )
 
-    # Primul răspuns va fi creat dinamic după input (sau greeting)
+    # Moșul deschide conversația primul – salut inițial
+    await ws.send(
+        json.dumps(
+            {
+                "type": "input_text",
+                "text": (
+                    "As Santa Claus, start the call by greeting the child warmly. "
+                    "Use Romanian if the child sounds Romanian, or English otherwise. "
+                    "Say something like: 'Ho-ho-ho! Bună, dragă copil, sunt Moș Crăciun!' "
+                    "or 'Ho-ho-ho! Hello, my dear child, I am Santa Claus!'. "
+                    "Keep it short and friendly and then let the child speak."
+                ),
+            }
+        )
+    )
+
+    # Cerem primul răspuns (salutul lui Moș Crăciun)
     await ws.send(
         json.dumps(
             {
@@ -302,11 +249,10 @@ async def connect_openai():
 class CallSession:
     def __init__(self):
         self.start_time = time.time()
-        self.response_active = False  # True când Moșul vorbește
-        self.closing_phase_started = False  # adevărat după ~4 minute
-        self.goodbye_requested = False  # am cerut deja răspunsul de "Noapte bună"
-        self.hangup_requested = False  # trebuie închis apelul
-        self.ws_closed = False         # WebSocket deja închis
+        self.response_active = False      # True când Moșul vorbește
+        self.closing_phase_started = False
+        self.hangup_requested = False
+        self.ws_closed = False
 
 
 # ----------------------------------------------------------
@@ -316,26 +262,25 @@ class CallSession:
 async def vonage_to_openai(openai_ws, vonage_ws: WebSocket, session: CallSession):
     """
     Primește audio de la Vonage (copilul) și îl trimite la OpenAI.
-    Implementăm și barge-in "smart": dacă copilul vorbește suficient de tare
+    Implementăm și barge-in: dacă copilul vorbește suficient de tare
     în timp ce Moșul vorbește, oprim răspunsul curent.
     """
-    # prag pentru "vorbește clar / mai tare" (heuristic)
-    AMPLITUDE_THRESHOLD = 1200
+    AMPLITUDE_THRESHOLD = 1200  # prag pentru "copilul chiar vorbește"
 
     try:
         while True:
-            message = await vonage_ws.receive()
+            msg = await vonage_ws.receive()
 
-            if message["type"] == "websocket.disconnect":
+            if msg["type"] == "websocket.disconnect":
                 print("Vonage WS disconnected (client).")
                 break
 
-            audio = message.get("bytes")
+            audio = msg.get("bytes")
             if not audio:
-                # ignorăm eventuale mesaje text (nu ar trebui să fie)
+                # ignorăm eventuale text frames
                 continue
 
-            # analizăm amplitudinea ca să detectăm vorbirea
+            # Detectăm amplitudinea maximă (heuristic barge-in)
             num_samples = len(audio) // 2
             if num_samples > 0:
                 samples = struct.unpack("<" + "h" * num_samples, audio)
@@ -343,28 +288,38 @@ async def vonage_to_openai(openai_ws, vonage_ws: WebSocket, session: CallSession
             else:
                 max_amp = 0
 
-            # dacă copilul vorbește mai tare și Moșul e în plin răspuns -> barge-in
+            # Dacă copilul vorbește tare și Moșul e în plin răspuns → barge-in
             if max_amp > AMPLITUDE_THRESHOLD and session.response_active:
-                print("BARGE-IN: copilul vorbește — anulăm răspunsul curent.")
+                print("BARGE-IN: copilul vorbește – anulăm răspunsul curent.")
                 try:
-                    await openai_ws.send(json.dumps({"type": "response.cancel"}))
+                    await openai_ws.send(
+                        json.dumps(
+                            {
+                                "type": "response.cancel"
+                            }
+                        )
+                    )
                 except Exception as e:
                     print("Error sending response.cancel:", e)
 
-            # trimitem audio către OpenAI
+            # Trimitem audio către OpenAI
             audio_b64 = base64.b64encode(audio).decode("ascii")
-            await openai_ws.send(
-                json.dumps(
-                    {
-                        "type": "input_audio_buffer.append",
-                        "audio": audio_b64,
-                    }
+            try:
+                await openai_ws.send(
+                    json.dumps(
+                        {
+                            "type": "input_audio_buffer.append",
+                            "audio": audio_b64,
+                        }
+                    )
                 )
-            )
-            # server_vad se ocupă de commit când detectează pauză
+            except Exception as e:
+                print("Error sending audio to OpenAI:", e)
+                break
 
+        # La ieșire – marcăm că vrem închiderea apelului
     except Exception as e:
-        print("Error vonage_to_openai:", e)
+        print("Error in vonage_to_openai:", e)
     finally:
         session.hangup_requested = True
         try:
@@ -376,8 +331,6 @@ async def vonage_to_openai(openai_ws, vonage_ws: WebSocket, session: CallSession
         except:
             pass
         session.ws_closed = True
-
-
 # ----------------------------------------------------------
 # Flow: OpenAI -> Vonage (răspuns Moș Crăciun)
 # ----------------------------------------------------------
@@ -393,27 +346,30 @@ async def openai_to_vonage(openai_ws, vonage_ws: WebSocket, session: CallSession
 
             msg_type = data.get("type")
 
-            # urmăriram starea răspunsului
+            # urmăriram starea răspunsului (Moșul vorbește / nu)
             if msg_type == "response.started":
                 session.response_active = True
 
             if msg_type in ("response.completed", "response.canceled", "response.failed"):
                 session.response_active = False
 
-                # după orice răspuns, pregătim altul (pentru următorul turn)
+                # după orice răspuns, dacă nu vrem să închidem, pregătim următorul turn
                 if not session.hangup_requested:
-                    await openai_ws.send(
-                        json.dumps(
-                            {
-                                "type": "response.create",
-                                "response": {
-                                    "modalities": ["audio", "text"]
-                                },
-                            }
+                    try:
+                        await openai_ws.send(
+                            json.dumps(
+                                {
+                                    "type": "response.create",
+                                    "response": {
+                                        "modalities": ["audio", "text"]
+                                    },
+                                }
+                            )
                         )
-                    )
+                    except Exception as e:
+                        print("Error creating next response:", e)
 
-            # bucăți de audio
+            # bucăți de audio generate de Moș Crăciun
             if msg_type == "response.audio.delta":
                 audio_b64 = data.get("delta")
                 if not audio_b64:
@@ -421,16 +377,20 @@ async def openai_to_vonage(openai_ws, vonage_ws: WebSocket, session: CallSession
 
                 pcm_bytes = base64.b64decode(audio_b64)
 
-                # creștem volumul cu ~30%
+                # creștem volumul ~30% pentru a se auzi mai tare în difuzor
                 boosted = apply_gain(pcm_bytes, gain=1.3)
 
-                await vonage_ws.send_bytes(boosted)
+                try:
+                    await vonage_ws.send_bytes(boosted)
+                except Exception as e:
+                    print("Error sending audio to Vonage:", e)
+                    break
 
             elif msg_type == "error":
                 print("OpenAI ERROR:", data)
 
     except Exception as e:
-        print("Error openai_to_vonage:", e)
+        print("Error in openai_to_vonage:", e)
     finally:
         session.hangup_requested = True
         try:
@@ -450,11 +410,11 @@ async def openai_to_vonage(openai_ws, vonage_ws: WebSocket, session: CallSession
 
 async def call_timer(openai_ws, session: CallSession):
     """
-    - La ~4 minute: Moșul anunță că trebuie să plece curând.
+    - La ~4 minute: Moșul anunță că trebuie să plece curând (dar mai stă puțin).
     - La ~5 minute: dacă nu s-a închis deja, închidem apelul.
     """
     try:
-        # așteptăm ~4 minute înainte de pre-final
+        # așteptăm 4 minute înainte de pre-final
         await asyncio.sleep(4 * 60)
 
         if session.ws_closed:
@@ -463,7 +423,7 @@ async def call_timer(openai_ws, session: CallSession):
         session.closing_phase_started = True
         print("CALL TIMER: pornim faza de încheiere (4 minute).")
 
-        # injectăm text în conversație – Moșul explică că trebuie să plece curând
+        # injectăm text – instrucțiuni ca Moșul să anunțe că pleacă în curând
         await openai_ws.send(
             json.dumps(
                 {
@@ -471,9 +431,9 @@ async def call_timer(openai_ws, session: CallSession):
                     "text": (
                         "In character as Santa, tell the child gently that you will "
                         "have to go in about one minute to feed the reindeer and "
-                        "prepare the presents, but they can say something or ask "
-                        "something before you say goodbye. Use the child’s language "
-                        "(Romanian or English). Keep it short and warm."
+                        "prepare the presents. Invite the child to say something or "
+                        "to say goodbye. Use the child’s language (Romanian or English). "
+                        "Keep it short and warm, then let the child answer."
                     ),
                 }
             )
@@ -490,12 +450,16 @@ async def call_timer(openai_ws, session: CallSession):
             )
         )
 
-        # după încă ~60 secunde, închidem dacă nu s-a închis deja
+        # mai așteptăm aproximativ 1 minut (până la 5 minute total)
         await asyncio.sleep(60)
 
         if not session.ws_closed:
             print("CALL TIMER: 5 minute – cerem închiderea apelului.")
             session.hangup_requested = True
+            try:
+                await openai_ws.close()
+            except:
+                pass
 
     except Exception as e:
         print("Error in call_timer:", e)
@@ -512,7 +476,7 @@ async def ws_handler(ws: WebSocket):
 
     session = CallSession()
 
-    # conectăm la OpenAI
+    # conectăm la OpenAI Realtime
     try:
         oai_ws = await connect_openai()
     except Exception as e:
@@ -520,31 +484,13 @@ async def ws_handler(ws: WebSocket):
         await ws.close()
         return
 
-    # Moșul vorbește primul: greeting automat
-    try:
-        await oai_ws.send(json.dumps({
-            "type": "input_text",
-            "text": (
-                "Start the call by greeting the child warmly as Santa. "
-                "If the child is likely Romanian, you can say something like: "
-                "\"Ho-ho-ho! Buna, drag copil! Sunt Mos Craciun! Ce faci tu, puișor?\" "
-                "If the child is more likely English, say the English equivalent. "
-                "Keep it short, magical, warm and friendly, and then wait for "
-                "the child to answer."
-            )
-        }))
-
-        await oai_ws.send(json.dumps({
-            "type": "response.create",
-            "response": {"modalities": ["audio", "text"]}
-        }))
-    except Exception as e:
-        print("Error sending initial greeting:", e)
-
-    # pornim timerul de 5 minute
+    # pornim timerul de 5 minute (anunț la 4 min + închidere la 5)
     timer_task = asyncio.create_task(call_timer(oai_ws, session))
 
-    # rulează bidirecțional
+    # rulăm cele 3 task-uri în paralel:
+    # - audio copil -> OpenAI
+    # - audio Moș -> copil
+    # - timer apel
     await asyncio.gather(
         vonage_to_openai(oai_ws, ws, session),
         openai_to_vonage(oai_ws, ws, session),
